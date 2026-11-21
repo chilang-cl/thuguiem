@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Gửi Thảo Yêu Dấu ♥</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,600;1,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #0b0512;
+      --bg-mid: #1a0924;
+      --bg-rose: #2c0d2e;
+      --pink-bright: #ff5d9e;
+      --pink-soft: #ff9ec4;
+      --pink-blush: #ffd9e8;
+      --gold-soft: #f7d996;
+      --cream: #fff8f5;
+      --ink-dark: #4a2235;
+      --ink-muted: #7b4860;
+      --envelope-body: #f9d5e1;
+      --envelope-dark: #eeb3c8;
+      --envelope-flap: #f3c1d3;
+      --envelope-inner: #d98aa8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 42%, var(--bg-rose) 0%, var(--bg-mid) 48%, var(--bg-deep) 100%);
+      color: var(--cream);
+      font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Fullscreen Particle Canvas */
+    #particleCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+      cursor: pointer;
+    }
+
+    /* Ambient Glow behind center */
+    .ambient-aura {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: min(76vw, 560px);
+      height: min(76vw, 560px);
+      transform: translate(-50%, -50%) scale(0.7);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(230, 20, 56, 0.36) 0%, rgba(185, 16, 48, 0.14) 48%, transparent 72%);
+      filter: blur(28px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.2s ease, transform 1.2s ease;
+      z-index: 2;
+    }
+    .ambient-aura.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Top Control Bar */
+    .top-controls {
+      position: fixed;
+      top: calc(12px + env(safe-area-inset-top, 0px));
+      right: calc(12px + env(safe-area-inset-right, 0px));
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 38px;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 196, 220, 0.28);
+      background: rgba(24, 10, 34, 0.62);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--pink-blush);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .icon-btn:hover {
+      background: rgba(255, 93, 158, 0.24);
+      border-color: rgba(255, 158, 196, 0.6);
+      transform: translateY(-1px);
+    }
+    .icon-btn:active {
+      transform: scale(0.96);
+    }
+    .icon-btn svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+    .icon-btn .btn-label {
+      display: inline;
+    }
+    @media (max-width: 520px) {
+      .icon-btn {
+        padding: 0 10px;
+      }
+      .icon-btn .btn-label {
+        display: none;
+      }
+    }
+
+    /* Stage Progress Dots (top-left) */
+    .stage-indicator {
+      position: fixed;
+      top: calc(16px + env(safe-area-inset-top, 0px));
+      left: calc(12px + env(safe-area-inset-left, 0px));
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: rgba(24, 10, 34, 0.5);
+      border: 1px solid rgba(255, 196, 220, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .stage-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255, 217, 232, 0.28);
+      transition: all 0.4s ease;
+    }
+    .stage-dot.active {
+      width: 20px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--pink-bright), var(--gold-soft));
+      box-shadow: 0 0 10px rgba(255, 93, 158, 0.8);
+    }
+    .stage-dot.done {
+      background: var(--pink-soft);
+    }
+
+    /* Bottom Tap Prompt */
+    .hint-bar {
+      position: fixed;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 35;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(22, 8, 32, 0.72);
+      border: 1px solid rgba(255, 170, 206, 0.34);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--pink-blush);
+      font-size: clamp(12.5px, 3.4vw, 13.8px);
+      line-height: 1.35;
+      text-align: center;
+      letter-spacing: 0.15px;
+      width: max-content;
+      max-width: calc(100vw - 28px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.36);
+      pointer-events: none;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .hint-bar.hidden {
+      opacity: 0;
+      transform: translateX(-50%) translateY(14px);
+    }
+    .pulse-heart {
+      display: inline-block;
+      color: var(--pink-bright);
+      animation: softPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes softPulse {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.26); opacity: 1; }
+    }
+
+    /* Rising Hearts Layer (20-30 hearts from bottom to top) */
+    #risingHeartsLayer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 18;
+    }
+
+    .rising-heart {
+      position: absolute;
+      bottom: -60px;
+      opacity: 0;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 0 8px rgba(255, 93, 158, 0.65));
+      animation: floatHeartUp var(--dur, 7s) ease-in var(--delay, 0s) infinite;
+    }
+    @keyframes floatHeartUp {
+      0% {
+        transform: translate3d(0, 0, 0) scale(var(--scale, 1)) rotate(var(--rot-start, -10deg));
+        opacity: 0;
+      }
+      12% {
+        opacity: var(--max-op, 0.9);
+      }
+      50% {
+        transform: translate3d(var(--sway, 24px), -52vh, 0) scale(calc(var(--scale, 1) * 1.08)) rotate(var(--rot-mid, 12deg));
+        opacity: var(--max-op, 0.9);
+      }
+      88% {
+        opacity: calc(var(--max-op, 0.9) * 0.75);
+      }
+      100% {
+        transform: translate3d(calc(var(--sway, 24px) * -0.7), -114vh, 0) scale(calc(var(--scale, 1) * 0.88)) rotate(var(--rot-end, -14deg));
+        opacity: 0;
+      }
+    }
+
+    /* Floating 8 Polaroid Photos Layer */
+    #floatingPhotosLayer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 22;
+      overflow: hidden;
+    }
+
+    .polaroid-float {
+      position: absolute;
+      width: clamp(92px, 11.2vw, 138px);
+      background: #fffdfb;
+      padding: 6px 6px 20px 6px;
+      border-radius: 6px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 18px rgba(255, 130, 180, 0.25);
+      pointer-events: auto;
+      cursor: pointer;
+      opacity: 0;
+      transform: translate3d(0, 90px, 0) scale(0.7) rotate(var(--tilt, 0deg));
+      transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease, box-shadow 0.25s ease;
+    }
+    .polaroid-float.shown {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1) rotate(var(--tilt, 0deg));
+      animation: polaroidBob var(--bob-dur, 4.6s) ease-in-out var(--bob-delay, 0s) infinite alternate;
+    }
+    .polaroid-float:hover {
+      z-index: 45;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(255, 110, 170, 0.55);
+      animation-play-state: paused;
+      transform: translate3d(0, -6px, 0) scale(1.12) rotate(0deg);
+    }
+    @keyframes polaroidBob {
+      0% { transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg)); }
+      100% { transform: translate3d(0, -12px, 0) rotate(calc(var(--tilt, 0deg) + 2.5deg)); }
+    }
+    .polaroid-float img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 3px;
+      display: block;
+      background: #f5d8e4;
+    }
+    .polaroid-caption {
+      margin-top: 5px;
+      text-align: center;
+      font-family: 'Dancing Script', cursive;
+      font-size: 13px;
+      color: var(--ink-dark);
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* On smaller screens, hide absolute side polaroids & show them nicely inside the scrollable letter showcase */
+    .mobile-photo-gallery {
+      display: none;
+    }
+    /* Hiệu ứng ảnh bay lên trên điện thoại (bay nhẹ nhàng dọc theo mép màn hình) */
+    @keyframes mobilePolaroidRise {
+      0% {
+        transform: translate3d(0, 108vh, 0) rotate(var(--tilt, 0deg)) scale(0.85);
+        opacity: 0;
+      }
+      12% {
+        opacity: 0.88;
+      }
+      84% {
+        opacity: 0.82;
+      }
+      100% {
+        transform: translate3d(var(--sway, 16px), -18vh, 0) rotate(calc(var(--tilt, 0deg) + 8deg)) scale(0.95);
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 900px) {
+      /* Vẫn giữ 8 ảnh bay từ dưới lên trên điện thoại ở lớp nền nhẹ */
+      #floatingPhotosLayer {
+        display: block;
+        z-index: 20;
+      }
+      .polaroid-float {
+        width: 68px;
+        padding: 3px 3px 10px 3px;
+        top: 0 !important;
+        pointer-events: none;
+      }
+      .polaroid-float .polaroid-caption {
+        font-size: 9px;
+        margin-top: 2px;
+      }
+      .polaroid-float.shown {
+        opacity: 0;
+        animation: mobilePolaroidRise var(--m-dur, 11s) linear var(--m-delay, 0s) infinite;
+      }
+      .mobile-photo-gallery {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        width: 100%;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px dashed rgba(217, 114, 154, 0.35);
+      }
+      .mobile-polaroid {
+        background: #ffffff;
+        padding: 4px 4px 12px 4px;
+        border-radius: 5px;
+        box-shadow: 0 6px 16px rgba(85, 22, 54, 0.16);
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(18px) scale(0.92);
+        transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .mobile-polaroid.shown {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      .mobile-polaroid img {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 3px;
+        display: block;
+      }
+      .mobile-polaroid span {
+        display: block;
+        margin-top: 3px;
+        text-align: center;
+        font-family: 'Dancing Script', cursive;
+        font-size: 11px;
+        color: var(--ink-muted);
+      }
+    }
+    @media (max-width: 640px) {
+      #letterStage {
+        justify-content: flex-start;
+        padding: calc(58px + env(safe-area-inset-top, 0px)) 12px calc(30px + env(safe-area-inset-bottom, 0px)) 12px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .love-banner {
+        gap: 6px 12px;
+        margin-bottom: 12px;
+      }
+      .letter-card {
+        width: 100%;
+        max-width: 460px;
+        max-height: none;
+        overflow-y: visible;
+        padding: 14px 16px 18px 16px;
+        border-radius: 16px;
+      }
+      .letter-top-photo-wrap {
+        padding: 5px;
+        margin-bottom: 12px;
+      }
+      .letter-top-photo-wrap img {
+        aspect-ratio: 4 / 3;
+      }
+      .letter-body {
+        font-size: 14.5px;
+        line-height: 1.78;
+      }
+      .letter-footer {
+        flex-wrap: wrap;
+      }
+      .envelope-wrapper {
+        width: min(78vw, 276px);
+        height: min(51vw, 182px);
+      }
+      .wax-seal {
+        width: 46px;
+        height: 46px;
+        font-size: 20px;
+      }
+      .customizer-box {
+        padding: 16px;
+      }
+    }
+    @media (max-width: 440px) {
+      .mobile-photo-gallery {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 9px;
+      }
+      .photo-slots-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* Stage 2: Envelope Overlay */
+    #envelopeStage {
+      position: fixed;
+      inset: 0;
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+    #envelopeStage.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #envelopeStage.fade-out {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.9);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .envelope-wrapper {
+      position: relative;
+      width: min(82vw, 310px);
+      height: min(54vw, 206px);
+      cursor: pointer;
+      perspective: 1100px;
+      transform: translateY(40px) scale(0.84);
+      transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+      animation: envelopeHoverFloat 3.4s ease-in-out infinite;
+    }
+    #envelopeStage.visible .envelope-wrapper {
+      transform: translateY(0) scale(1);
+    }
+    @keyframes envelopeHoverFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-9px); }
+    }
+    .envelope-wrapper.opening {
+      animation: none;
+    }
+
+    .envelope-shadow {
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 78%;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(255, 93, 158, 0.48), transparent 72%);
+      filter: blur(8px);
+    }
+
+    .envelope-back {
+      position: absolute;
+      inset: 0;
+      background: var(--envelope-inner);
+      border-radius: 12px;
+      box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5), 0 0 36px rgba(255, 93, 158, 0.35);
+      overflow: hidden;
+    }
+
+    /* Mini letter peeking inside envelope before expanding */
+    .envelope-letter-peek {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 10%;
+      height: 76%;
+      background: linear-gradient(180deg, #fffaf8 0%, #ffedf3 100%);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(80, 20, 45, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      z-index: 2;
+      transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .envelope-letter-peek p {
+      font-family: 'Dancing Script', cursive;
+      font-size: 20px;
+      color: var(--pink-bright);
+    }
+    .envelope-wrapper.opening .envelope-letter-peek {
+      transform: translateY(-78%);
+    }
+
+    .envelope-front-left,
+    .envelope-front-right,
+    .envelope-front-bottom {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .envelope-front-left {
+      background: var(--envelope-body);
+      clip-path: polygon(0 0, 52% 54%, 0 100%);
+      border-radius: 12px 0 0 12px;
+    }
+    .envelope-front-right {
+      background: var(--envelope-dark);
+      clip-path: polygon(100% 0, 48% 54%, 100% 100%);
+      border-radius: 0 12px 12px 0;
+    }
+    .envelope-front-bottom {
+      background: linear-gradient(180deg, #fce2eb 0%, #f5c6d7 100%);
+      clip-path: polygon(0 100%, 50% 48%, 100% 100%);
+      border-radius: 0 0 12px 12px;
+    }
+
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 58%;
+      background: linear-gradient(180deg, #ffdbe7 0%, var(--envelope-flap) 100%);
+      clip-path: polygon(0 0, 50% 100%, 100% 0);
+      transform-origin: top center;
+      transform: rotateX(0deg);
+      transition: transform 0.72s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 4;
+      border-radius: 12px 12px 0 0;
+      filter: drop-shadow(0 4px 6px rgba(100, 20, 55, 0.18));
+    }
+    .envelope-wrapper.opening .envelope-flap {
+      transform: rotateX(180deg);
+      z-index: 1;
+    }
+
+    .wax-seal {
+      position: absolute;
+      top: 52%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ff79ab 0%, #d92662 68%, #9e1545 100%);
+      box-shadow: 0 6px 18px rgba(158, 21, 69, 0.55), inset 0 2px 4px rgba(255, 220, 232, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff3f7;
+      font-size: 22px;
+      z-index: 5;
+      transition: transform 0.45s ease, opacity 0.45s ease;
+    }
+    .envelope-wrapper:hover .wax-seal {
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    .envelope-wrapper.opening .wax-seal {
+      transform: translate(-50%, -50%) scale(1.4);
+      opacity: 0;
+    }
+
+    .envelope-label {
+      margin-top: 30px;
+      text-align: center;
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(24px, 4.2vw, 32px);
+      color: var(--pink-blush);
+      text-shadow: 0 2px 18px rgba(255, 93, 158, 0.7);
+    }
+
+    /* Stage 3: Opened Letter + I LOVE YOU / ANH YÊU EM */
+    #letterStage {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 58px 16px 24px 16px;
+      pointer-events: none;
+      opacity: 0;
+      overflow-y: auto;
+      transition: opacity 0.8s ease;
+    }
+    #letterStage.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .love-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px 22px;
+      margin-bottom: 14px;
+      text-align: center;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s, opacity 0.9s ease 0.15s;
+    }
+    #letterStage.visible .love-banner {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .love-text-en {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 600;
+      font-size: clamp(22px, 3.6vw, 36px);
+      letter-spacing: 3px;
+      background: linear-gradient(90deg, #ffd1e3, #ff6fa8, #ffe0a3, #ff6fa8);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shimmerText 4.5s linear infinite;
+      filter: drop-shadow(0 0 14px rgba(255, 93, 158, 0.55));
+    }
+
+    .love-divider {
+      color: var(--gold-soft);
+      font-size: clamp(16px, 2.4vw, 22px);
+      animation: softPulse 1.6s ease-in-out infinite;
+    }
+
+    .love-text-vi {
+      font-family: 'Dancing Script', cursive;
+      font-weight: 700;
+      font-size: clamp(26px, 4.2vw, 42px);
+      color: #fff0f6;
+      text-shadow: 0 0 18px rgba(255, 93, 158, 0.85), 0 0 36px rgba(255, 130, 178, 0.45);
+    }
+
+    @keyframes shimmerText {
+      0% { background-position: 0% center; }
+      100% { background-position: 220% center; }
+    }
+
+    /* Opened Letter Card */
+    .letter-card {
+      position: relative;
+      width: min(92vw, 500px);
+      max-height: calc(100vh - 145px);
+      overflow-y: auto;
+      background: linear-gradient(180deg, #fffdfb 0%, #fff2f7 100%);
+      color: var(--ink-dark);
+      border-radius: 18px;
+      padding: 18px 22px 22px 22px;
+      box-shadow:
+        0 26px 64px rgba(0, 0, 0, 0.55),
+        0 0 42px rgba(255, 108, 168, 0.3),
+        inset 0 0 0 1px rgba(255, 190, 215, 0.8);
+      transform: translateY(42px) scale(0.88);
+      opacity: 0;
+      transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.1s, opacity 0.85s ease 0.1s;
+    }
+    #letterStage.visible .letter-card {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .letter-card::-webkit-scrollbar {
+      width: 5px;
+    }
+    .letter-card::-webkit-scrollbar-thumb {
+      background: rgba(230, 130, 168, 0.45);
+      border-radius: 999px;
+    }
+
+    /* Photo #9 placed ON TOP of the opened letter */
+    .letter-top-photo-wrap {
+      position: relative;
+      width: 100%;
+      margin-bottom: 16px;
+      padding: 7px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 22px rgba(128, 32, 74, 0.15);
+      cursor: pointer;
+      transition: transform 0.25s ease;
+    }
+    .letter-top-photo-wrap:hover {
+      transform: scale(1.015);
+    }
+    .letter-top-photo-wrap img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      border-radius: 8px;
+      display: block;
+    }
+    .photo-badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 93, 158, 0.88);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      box-shadow: 0 4px 12px rgba(217, 38, 98, 0.4);
+    }
+
+    .letter-salutation {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(24px, 4vw, 30px);
+      color: #d6336c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .letter-body {
+      font-size: clamp(14.5px, 2.2vw, 15.8px);
+      line-height: 1.82;
+      color: var(--ink-dark);
+      font-weight: 400;
+      text-align: left;
+      white-space: pre-line;
+    }
+
+    .letter-footer {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(230, 148, 178, 0.3);
+    }
+    .letter-signature {
+      font-family: 'Dancing Script', cursive;
+      font-size: 22px;
+      color: #c2255c;
+    }
+    .heart-burst-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #ff5d9e, #ff8fab);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(255, 93, 158, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .heart-burst-btn:hover {
+      transform: translateY(-1px) scale(1.03);
+      box-shadow: 0 8px 22px rgba(255, 93, 158, 0.5);
+    }
+    .heart-burst-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Lightbox Modal for viewing any of the 9 photos */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(8, 3, 14, 0.84);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lightbox-box {
+      position: relative;
+      max-width: min(92vw, 520px);
+      background: #fffdfb;
+      padding: 12px 12px 18px 12px;
+      border-radius: 14px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .modal-backdrop.open .lightbox-box {
+      transform: scale(1);
+    }
+    .lightbox-box img {
+      width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 8px;
+      display: block;
+    }
+    .lightbox-caption {
+      margin-top: 10px;
+      text-align: center;
+      font-family: 'Dancing Script', cursive;
+      font-size: 24px;
+      color: var(--ink-dark);
+    }
+    .modal-close {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      background: var(--pink-bright);
+      color: #ffffff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Photo Customizer Modal (lets the user test with their own 9 photos!) */
+    .customizer-box {
+      position: relative;
+      width: min(94vw, 560px);
+      max-height: 84vh;
+      overflow-y: auto;
+      background: #1b0c26;
+      border: 1px solid rgba(255, 170, 206, 0.32);
+      border-radius: 18px;
+      padding: 22px;
+      color: var(--cream);
+      box-shadow: 0 26px 64px rgba(0, 0, 0, 0.7);
+    }
+    .customizer-box h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--pink-blush);
+      margin-bottom: 6px;
+    }
+    .customizer-desc {
+      font-size: 13px;
+      color: rgba(255, 224, 236, 0.78);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .photo-slots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .slot-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px dashed rgba(255, 170, 206, 0.35);
+      border-radius: 10px;
+      padding: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .slot-card:hover {
+      border-color: var(--pink-bright);
+      background: rgba(255, 93, 158, 0.12);
+    }
+    .slot-card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+      margin-bottom: 5px;
+    }
+    .slot-card span {
+      display: block;
+      font-size: 11px;
+      color: var(--pink-blush);
+    }
+    .slot-card input[type="file"] {
+      display: none;
+    }
+    .customizer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .btn-secondary {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 196, 220, 0.32);
+      background: transparent;
+      color: var(--pink-blush);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #ff5d9e, #ff8fab);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nhạc nền tự tải lên (đặt file MP3 tại music/nhac-nen.mp3) -->
+  <audio id="bgMusic" loop preload="none" playsinline></audio>
+
+  <!-- Canvas hạt lơ lửng -> gộp trái tim -->
+  <canvas id="particleCanvas"></canvas>
+  <div class="ambient-aura" id="ambientAura"></div>
+
+  <!-- Thanh tiến trình 4 bước -->
+  <div class="stage-indicator" aria-label="Tiến trình">
+    <span class="stage-dot active" id="dot0" title="Các hạt lơ lửng"></span>
+    <span class="stage-dot" id="dot1" title="Trái tim"></span>
+    <span class="stage-dot" id="dot2" title="Phong thư"></span>
+    <span class="stage-dot" id="dot3" title="Mở thư"></span>
+  </div>
+
+  <!-- Thanh điều khiển góc phải -->
+  <div class="top-controls">
+    <button class="icon-btn" id="soundToggleBtn" type="button" title="Bật / tắt nhạc nền">
+      <svg id="soundIconOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+      </svg>
+      <svg id="soundIconOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <line x1="23" y1="9" x2="17" y2="15"></line>
+        <line x1="17" y1="9" x2="23" y2="15"></line>
+      </svg>
+      <span class="btn-label" id="soundLabel">Nhạc</span>
+    </button>
+
+    <button class="icon-btn" id="customizePhotosBtn" type="button" title="Thay 9 ảnh của hai đứa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+      <span class="btn-label">Đổi 9 ảnh</span>
+    </button>
+
+    <button class="icon-btn" id="replayBtn" type="button" title="Xem lại từ đầu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"></polyline>
+        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+      </svg>
+      <span class="btn-label">Xem lại</span>
+    </button>
+  </div>
+
+  <!-- Lớp trái tim bay từ dưới lên trên (26 trái tim) -->
+  <div id="risingHeartsLayer" aria-hidden="true"></div>
+
+  <!-- Lớp 8 ảnh Polaroid bay lên xung quanh -->
+  <div id="floatingPhotosLayer"></div>
+
+  <!-- Bước 2: Phong thư xuất hiện -->
+  <div id="envelopeStage">
+    <div class="envelope-wrapper" id="envelopeBox" role="button" tabindex="0" aria-label="Mở phong thư gửi Thảo">
+      <div class="envelope-shadow"></div>
+      <div class="envelope-back"></div>
+      <div class="envelope-letter-peek">
+        <p>Gửi Thảo ♥</p>
+      </div>
+      <div class="envelope-front-left"></div>
+      <div class="envelope-front-right"></div>
+      <div class="envelope-front-bottom"></div>
+      <div class="envelope-flap"></div>
+      <div class="wax-seal">♥</div>
+    </div>
+    <div class="envelope-label">Một lá thư nhỏ gửi Thảo...</div>
+  </div>
+
+  <!-- Bước 3: Bức thư mở ra + chữ I LOVE YOU / ANH YÊU EM + Ảnh #9 trên thư -->
+  <div id="letterStage">
+    <div class="love-banner">
+      <span class="love-text-en">I LOVE YOU</span>
+      <span class="love-divider">✦ ♥ ✦</span>
+      <span class="love-text-vi">ANH YÊU EM</span>
+    </div>
+
+    <div class="letter-card" id="letterCard">
+      <!-- Ảnh thứ 9 đặt ngay phía trên bức thư -->
+      <div class="letter-top-photo-wrap" id="letterTopPhotoWrap" title="Nhấn để xem ảnh lớn">
+        <img id="letterTopPhoto" alt="Khoảnh khắc đặc biệt cùng Thảo" />
+        <span class="photo-badge">♥ Gửi Thảo</span>
+      </div>
+
+      <div class="letter-salutation">Gửi em, Thảo yêu dấu ♥</div>
+      <div class="letter-body" id="letterBodyText"></div>
+
+      <div class="letter-footer">
+        <span class="letter-signature">— Mãi thương em ♥</span>
+        <button class="heart-burst-btn" id="moreHeartsBtn" type="button">
+          <span>♥</span> Thả thêm tim
+        </button>
+      </div>
+
+      <!-- Khung 8 ảnh gọn gàng trên màn hình nhỏ (mobile/tablet) -->
+      <div class="mobile-photo-gallery" id="mobilePhotoGallery"></div>
+    </div>
+  </div>
+
+  <!-- Thanh hướng dẫn tương tác phía dưới -->
+  <div class="hint-bar" id="hintBar">
+    <span class="pulse-heart">♥</span>
+    <span id="hintText">Chạm vào màn hình để các hạt gộp lại thành trái tim</span>
+  </div>
+
+  <!-- Lightbox phóng to ảnh -->
+  <div class="modal-backdrop" id="lightboxModal" role="dialog" aria-modal="true">
+    <div class="lightbox-box">
+      <button class="modal-close" id="lightboxClose" type="button" aria-label="Đóng">&times;</button>
+      <img id="lightboxImg" alt="Ảnh kỷ niệm" />
+      <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+  </div>
+
+  <!-- Modal cho phép chọn 9 ảnh thật từ máy để xem thử -->
+  <div class="modal-backdrop" id="customizerModal" role="dialog" aria-modal="true">
+    <div class="customizer-box">
+      <button class="modal-close" id="customizerClose" type="button" aria-label="Đóng">&times;</button>
+      <h3>Tùy chỉnh 9 ảnh của hai đứa ♥</h3>
+      <p class="customizer-desc">
+        Nhấn vào từng ô để thay ảnh thật của bạn và Thảo (1 ảnh đặt trên bức thư + 8 ảnh bay lên xung quanh). Bạn cũng có thể sửa trực tiếp mảng <code>CONFIG</code> trong mã nguồn HTML.
+      </p>
+      <div class="photo-slots-grid" id="photoSlotsGrid"></div>
+      <div class="customizer-actions">
+        <button class="btn-secondary" id="resetPhotosBtn" type="button">Khôi phục ảnh mẫu</button>
+        <button class="btn-primary" id="donePhotosBtn" type="button">Xong</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       CẤU HÌNH NỘI DUNG & 9 ẢNH (Bạn có thể thay đường dẫn ảnh của bạn tại đây)
+       ========================================================================= */
+    const DEFAULT_CONFIG = {
+      // Đường dẫn file nhạc nền MP3 bạn tự tải lên GitHub (đặt trong thư mục music/)
+      // Nếu chưa có file MP3, trang sẽ tự động phát giai điệu hộp nhạc dự phòng.
+      musicSrc: "nhac-nen.mp3",
+      letterContent:
+        "Thảo oi anh yêu em rất nhiều. Không chỉ là yêu, anh còn thương em từ những điều nhỏ bé nhất và luôn trân trọng từng khoảnh khắc có em ở bên. Cảm ơn em vì đã xuất hiện và làm cuộc sống của anh trở nên thật đặc biệt. Dù thế nào đi nữa, anh vẫn sẽ luôn ở đây, thương em, giữ gìn em và yêu em thật nhiều mỗi ngày 🥰",
+      // Ảnh thứ 9: xuất hiện ngay trên bức thư khi mở ra
+      topLetterPhoto: {
+        src: "anh-9.jpg",
+        caption: "Mãi bên nhau nhé Thảo ♥"
+      },
+      // 8 ảnh bay lên xung quanh khi mở thư
+      floatingPhotos: [
+        { src: "anh-1.jpg", caption: "Hoàng hôn bên em" },
+        { src: "anh-2.jpg", caption: "Góc cà phê ấm áp" },
+        { src: "anh-3.jpg", caption: "Đêm thả đèn trời" },
+        { src: "anh-4.jpg", caption: "Chiều đạp xe cùng em" },
+        { src: "anh-5.jpg", caption: "Chung một chiếc ô" },
+        { src: "anh-6.jpg", caption: "Ngày nắng dịu dàng" },
+        { src: "anh-7.jpg", caption: "Pháo hoa trái tim" },
+        { src: "anh-8.jpg", caption: "Bình yên bên nhau" }
+      ],
+      risingHeartCount: 26 // Khoảng 20-30 trái tim bay từ dưới lên trên
+    };
+
+    // Bản sao trạng thái ảnh hiện tại để người dùng có thể thay ảnh trực tiếp
+    let activeTopPhoto = { ...DEFAULT_CONFIG.topLetterPhoto };
+    let activeFloatingPhotos = DEFAULT_CONFIG.floatingPhotos.map(p => ({ ...p }));
+
+    /* =========================================================================
+       TRẠNG THÁI CHƯƠNG TRÌNH (0: Hạt -> 1: Trái tim -> 2: Phong thư -> 3: Mở thư)
+       ========================================================================= */
+    let stage = 0;
+    let isTransitioning = false;
+    let stage1FormedTime = 0;
+
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    const ambientAura = document.getElementById('ambientAura');
+    const envelopeStage = document.getElementById('envelopeStage');
+    const envelopeBox = document.getElementById('envelopeBox');
+    const letterStage = document.getElementById('letterStage');
+    const letterTopPhoto = document.getElementById('letterTopPhoto');
+    const letterTopPhotoWrap = document.getElementById('letterTopPhotoWrap');
+    const letterBodyText = document.getElementById('letterBodyText');
+    const floatingPhotosLayer = document.getElementById('floatingPhotosLayer');
+    const mobilePhotoGallery = document.getElementById('mobilePhotoGallery');
+    const risingHeartsLayer = document.getElementById('risingHeartsLayer');
+    const hintBar = document.getElementById('hintBar');
+    const hintText = document.getElementById('hintText');
+
+    // Khởi tạo nội dung bức thư chính xác
+    letterBodyText.textContent = DEFAULT_CONFIG.letterContent;
+    letterTopPhoto.src = activeTopPhoto.src;
+
+    /* =========================================================================
+       ÂM THANH NHẠC HỘP LÃNG MẠN (Web Audio API - không cần file ngoài)
+       ========================================================================= */
+    const bgMusic = document.getElementById('bgMusic');
+    bgMusic.src = DEFAULT_CONFIG.musicSrc;
+    bgMusic.volume = 0.65;
+    let customMusicAvailable = true;
+    bgMusic.addEventListener('error', () => {
+      customMusicAvailable = false;
+    });
+
+    let audioCtx = null;
+    let soundEnabled = true;
+    let melodyTimer = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playNote(freq, duration = 1.4, volume = 0.06, delay = 0) {
+      if (!soundEnabled || !audioCtx) return;
+      const now = audioCtx.currentTime + delay;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(volume, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + duration + 0.05);
+    }
+
+    function playHeartChime() {
+      initAudio();
+      // Hợp âm Fmaj7 dịu ngọt
+      [349.23, 440.0, 523.25, 659.25, 880.0].forEach((f, idx) => {
+        playNote(f, 1.6, 0.045, idx * 0.09);
+      });
+    }
+
+    function playEnvelopeChime() {
+      initAudio();
+      [392.0, 493.88, 587.33, 783.99].forEach((f, idx) => {
+        playNote(f, 1.4, 0.045, idx * 0.08);
+      });
+    }
+
+    function startRomanticMusicBox() {
+      initAudio();
+      stopRomanticMusicBox();
+      if (!soundEnabled) return;
+      // Ưu tiên phát file nhạc MP3 của bạn nếu đã tải lên thư mục music/
+      if (customMusicAvailable && DEFAULT_CONFIG.musicSrc) {
+        const playPromise = bgMusic.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Nếu chưa có file MP3 hoặc trình duyệt chặn, tự chuyển sang hộp nhạc
+            customMusicAvailable = false;
+            startFallbackMelody();
+          });
+          return;
+        }
+      }
+      startFallbackMelody();
+    }
+
+    function startFallbackMelody() {
+      // Giai điệu hộp nhạc chậm rãi, ngọt ngào
+      const notes = [
+        523.25, 659.25, 783.99, 659.25,
+        587.33, 698.46, 880.00, 698.46,
+        523.25, 659.25, 783.99, 1046.50,
+        987.77, 783.99, 659.25, 587.33
+      ];
+      let step = 0;
+      const tick = () => {
+        if (!soundEnabled || stage !== 3) return;
+        playNote(notes[step % notes.length], 1.7, 0.036, 0);
+        if (step % 4 === 0) {
+          playNote(notes[step % notes.length] / 2, 2.2, 0.024, 0);
+        }
+        step++;
+      };
+      tick();
+      melodyTimer = setInterval(tick, 620);
+    }
+
+    function stopRomanticMusicBox() {
+      if (bgMusic && !bgMusic.paused) {
+        bgMusic.pause();
+      }
+      if (melodyTimer) {
+        clearInterval(melodyTimer);
+        melodyTimer = null;
+      }
+    }
+
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const soundIconOn = document.getElementById('soundIconOn');
+    const soundIconOff = document.getElementById('soundIconOff');
+    soundToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      soundEnabled = !soundEnabled;
+      soundIconOn.style.display = soundEnabled ? 'block' : 'none';
+      soundIconOff.style.display = soundEnabled ? 'none' : 'block';
+      if (soundEnabled) {
+        initAudio();
+        if (stage === 3) startRomanticMusicBox();
+      } else {
+        stopRomanticMusicBox();
+      }
+    });
+
+    /* =========================================================================
+       HỆ THỐNG HẠT 3D (CANVAS PARTICLES) -> KHỐI TRÁI TIM ĐỎ CÓ CHIỀU SÂU
+       ========================================================================= */
+    function getViewportSize() {
+      const w = (window.visualViewport && window.visualViewport.width) || document.documentElement.clientWidth || window.innerWidth || 390;
+      const h = (window.visualViewport && window.visualViewport.height) || document.documentElement.clientHeight || window.innerHeight || 844;
+      return { w: Math.max(1, Math.round(w)), h: Math.max(1, Math.round(h)) };
+    }
+    let { w: width, h: height } = getViewportSize();
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const PARTICLE_COUNT = window.innerWidth < 600 ? 950 : 1350;
+    const STAR_COUNT = 95;
+    let particles = [];
+    let stars = [];
+    let animFrameId = null;
+    let pointerNormX = 0;
+    let pointerNormY = 0;
+
+    // Bảng màu đỏ rực rỡ có chiều sâu cho khối trái tim 3D
+    const redPalette = [
+      { r: 255, g: 36,  b: 66  }, // Đỏ tươi rực rỡ
+      { r: 235, g: 18,  b: 48  }, // Đỏ ruby
+      { r: 255, g: 68,  b: 92  }, // Đỏ san hô sáng
+      { r: 196, g: 12,  b: 40  }, // Đỏ thẫm
+      { r: 255, g: 120, b: 138 }  // Ánh đỏ hồng phản quang
+    ];
+
+    window.addEventListener('pointermove', (e) => {
+      if (width > 0 && height > 0) {
+        pointerNormX = (e.clientX / width - 0.5) * 2;
+        pointerNormY = (e.clientY / height - 0.5) * 2;
+      }
+    });
+
+    function resizeCanvas() {
+      const vp = getViewportSize();
+      width = vp.w;
+      height = vp.h;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      computeHeartTargets();
+    }
+
+    function initStars() {
+      stars = [];
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 1.35 + 0.35,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.015 + Math.random() * 0.025
+        });
+      }
+    }
+
+    function heartPoint(t, scale) {
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+      return { x: x * scale, y: y * scale };
+    }
+
+    // Tạo tọa độ 3D (x, y, z) cho khối trái tim phồng tự nhiên có chiều sâu
+    function computeHeartTargets() {
+      const isMobile = width < 600;
+      const scale = Math.min(width, height) * (isMobile ? 0.0235 : 0.0175);
+      const cx = width * 0.5;
+      const cy = height * 0.47;
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const t = (i / particles.length) * Math.PI * 2 + (Math.random() - 0.5) * 0.09;
+
+        // Phân bố bán kính trên mặt cắt trái tim để tạo khối 3D đầy đặn
+        const rNorm = Math.pow(Math.random(), 0.55); // Tập trung nhiều hơn về bề mặt khối
+        const pt = heartPoint(t, scale * rNorm);
+
+        // Độ dày trục Z theo dạng vòm phồng (ellipsoid dome) + thuôn dần về đỉnh nhọn bên dưới
+        const yTaper = Math.max(0.28, 1 - Math.max(0, pt.y / (scale * 19)) * 0.55);
+        const maxZ = scale * 9.8 * Math.sqrt(Math.max(0, 1 - rNorm * rNorm * 0.94)) * yTaper;
+
+        // 78% nằm trên vỏ bề mặt 3D (mặt trước & mặt sau), 22% tạo lõi đỏ phát sáng bên trong
+        const isShell = (i % 100) < 78;
+        const side = (i % 2 === 0) ? 1 : -1;
+        const zVal = isShell
+          ? side * maxZ * (0.88 + Math.random() * 0.16)
+          : (Math.random() * 2 - 1) * maxZ * 0.78;
+
+        p.baseHeartX = pt.x;
+        p.baseHeartY = pt.y;
+        p.baseHeartZ = zVal;
+        p.isCore = !isShell;
+
+        // Vị trí tỏa rộng nhẹ làm nền khi chuyển sang phong thư & bức thư
+        const angle = Math.atan2(pt.y, pt.x);
+        const expandDist = Math.max(width, height) * (0.42 + Math.random() * 0.25);
+        p.auraX = cx + Math.cos(angle) * expandDist;
+        p.auraY = cy + Math.sin(angle) * expandDist;
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const rgb = redPalette[Math.floor(Math.random() * redPalette.length)];
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          z: (Math.random() - 0.5) * 260,
+          vx: (Math.random() - 0.5) * 0.72,
+          vy: (Math.random() - 0.5) * 0.72,
+          baseHeartX: 0,
+          baseHeartY: 0,
+          baseHeartZ: 0,
+          auraX: 0,
+          auraY: 0,
+          isCore: false,
+          size: Math.random() * 2.1 + 1.05,
+          rgb: rgb,
+          alpha: 0.55 + Math.random() * 0.45,
+          twinklePhase: Math.random() * Math.PI * 2,
+          twinkleSpeed: 0.025 + Math.random() * 0.04,
+          ease: 0.048 + Math.random() * 0.048,
+          // Biến tạm cho phép chiếu 3D & sắp xếp chiều sâu Z
+          drawX: 0,
+          drawY: 0,
+          drawZ: 0,
+          drawScale: 1
+        });
+      }
+      computeHeartTargets();
+    }
+
+    function animateCanvas(now) {
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Vẽ nền sao lấp lánh
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        s.phase += s.speed;
+        const a = 0.2 + 0.55 * (0.5 + 0.5 * Math.sin(s.phase));
+        ctx.fillStyle = `rgba(255, 224, 238, ${a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const cx = width * 0.5;
+      const cy = height * 0.47;
+      const fov = 540;
+
+      // Góc xoay 3D & nhịp đập trái tim ở Stage 1
+      let beat = 1;
+      let rotY = 0;
+      let rotX = 0;
+      if (stage === 1) {
+        const elapsed = (now - stage1FormedTime) * 0.001;
+        // Nhịp đập tự nhiên kiểu tim thật (lub-dub), giữ khối trái tim đứng thẳng không xoay
+        beat = 1 + 0.048 * Math.sin(elapsed * 3.3) + 0.022 * Math.sin(elapsed * 6.6);
+        rotY = 0;
+        rotX = 0;
+      }
+
+      const cosY = Math.cos(rotY);
+      const sinY = Math.sin(rotY);
+      const cosX = Math.cos(rotX);
+      const sinX = Math.sin(rotX);
+      const maxDepthRef = Math.min(width, height) * 0.2;
+
+      // 2. Cập nhật vị trí từng hạt & chiếu phối cảnh 3D
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.twinklePhase += p.twinkleSpeed;
+
+        if (stage === 0) {
+          // Hạt lơ lửng tự do, riêng biệt
+          p.x += p.vx + Math.sin(p.twinklePhase * 0.6) * 0.22;
+          p.y += p.vy + Math.cos(p.twinklePhase * 0.5) * 0.22;
+          if (p.x < -10) p.x = width + 10;
+          if (p.x > width + 10) p.x = -10;
+          if (p.y < -10) p.y = height + 10;
+          if (p.y > height + 10) p.y = -10;
+          p.drawX = p.x;
+          p.drawY = p.y;
+          p.drawZ = p.z;
+          p.drawScale = 1;
+        } else if (stage === 1) {
+          // Xoay điểm 3D (x, y, z) quanh trục Y và X
+          const hx = p.baseHeartX * beat;
+          const hy = p.baseHeartY * beat;
+          const hz = p.baseHeartZ * beat;
+
+          const x1 = hx * cosY - hz * sinY;
+          const z1 = hx * sinY + hz * cosY;
+          const y2 = hy * cosX - z1 * sinX;
+          const z2 = hy * sinX + z1 * cosX;
+
+          const persp = fov / (fov - z2);
+          const targetX = cx + x1 * persp;
+          const targetY = cy + y2 * persp;
+
+          p.x += (targetX - p.x) * p.ease;
+          p.y += (targetY - p.y) * p.ease;
+          p.z += (z2 - p.z) * p.ease;
+
+          p.drawX = p.x;
+          p.drawY = p.y;
+          p.drawZ = p.z;
+          p.drawScale = persp;
+        } else {
+          // Tỏa nhẹ ra xung quanh làm ánh sáng nền khi mở phong thư & bức thư
+          p.x += (p.auraX - p.x) * 0.025 + Math.sin(p.twinklePhase * 0.5) * 0.25;
+          p.y += (p.auraY - p.y) * 0.025 + Math.cos(p.twinklePhase * 0.5) * 0.25;
+          p.z += (0 - p.z) * 0.04;
+          p.drawX = p.x;
+          p.drawY = p.y;
+          p.drawZ = p.z;
+          p.drawScale = 1;
+        }
+      }
+
+      // 3. Sắp xếp theo trục Z (hạt ở xa vẽ trước, hạt gần mặt trước vẽ sau -> tạo khối 3D thật)
+      if (stage === 1) {
+        particles.sort((a, b) => a.drawZ - b.drawZ);
+      }
+
+      // 4. Vẽ hạt kèm đổ bóng sáng tối 3D theo chiều sâu màu đỏ
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const twinkle = 0.78 + 0.22 * Math.sin(p.twinklePhase);
+
+        if (stage === 1) {
+          // depthNorm: 0 = viền sâu/mặt sau tối (đỏ rượu vang), 1 = phần nổi mặt trước sáng (đỏ tươi rực rỡ)
+          const depthNorm = Math.max(0, Math.min(1, (p.drawZ / (maxDepthRef || 160)) * 0.65 + 0.48));
+          // Hiệu ứng ánh sáng 3D chiếu từ trên-trái-trước giúp khối phồng nổi bật dù đứng yên
+          const lightBoost = Math.max(0, 1 - Math.hypot((p.drawX - (cx - 58)) / 215, (p.drawY - (cy - 68)) / 215));
+          const shade = 0.28 + depthNorm * 0.72;
+
+          const r = Math.min(255, Math.round(p.rgb.r * shade + lightBoost * 45 * depthNorm));
+          const g = Math.min(255, Math.round(p.rgb.g * shade * 0.75 + lightBoost * 58 * depthNorm * depthNorm));
+          const b = Math.min(255, Math.round(p.rgb.b * shade * 0.8 + lightBoost * 62 * depthNorm * depthNorm));
+
+          const radius = Math.max(0.75, p.size * p.drawScale * (0.62 + depthNorm * 0.62));
+          const alpha = (0.28 + depthNorm * 0.72) * (p.isCore ? 0.72 : 1) * twinkle;
+
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.beginPath();
+          ctx.arc(p.drawX, p.drawY, radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Quầng phát sáng đỏ cho các hạt ở mặt trước
+          if (depthNorm > 0.66 && radius > 1.9) {
+            ctx.globalAlpha = alpha * 0.26;
+            ctx.beginPath();
+            ctx.arc(p.drawX, p.drawY, radius * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else {
+          const drawAlpha = (stage >= 2 ? p.alpha * 0.45 : p.alpha * 0.85) * twinkle;
+          ctx.globalAlpha = drawAlpha;
+          ctx.fillStyle = `rgb(${p.rgb.r},${p.rgb.g},${p.rgb.b})`;
+          ctx.beginPath();
+          ctx.arc(p.drawX, p.drawY, p.size, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (p.size > 2.2) {
+            ctx.globalAlpha = drawAlpha * 0.24;
+            ctx.beginPath();
+            ctx.arc(p.drawX, p.drawY, p.size * 2.3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      animFrameId = requestAnimationFrame(animateCanvas);
+    }
+
+    /* =========================================================================
+       TRÁI TIM BAY TỪ DƯỚI LÊN TRÊN (26 TRÁI TIM)
+       ========================================================================= */
+    function spawnRisingHearts(count = DEFAULT_CONFIG.risingHeartCount) {
+      risingHeartsLayer.innerHTML = '';
+      const heartColors = ['#ff4d8d', '#ff70a6', '#ff99c2', '#f7d996', '#ff5c8a', '#ffd1e3'];
+
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'rising-heart';
+        const leftPct = 3 + (i / count) * 94 + (Math.random() - 0.5) * 4;
+        const size = 16 + Math.random() * 20;
+        const dur = 5.4 + Math.random() * 4.2;
+        const delay = Math.random() * 4.5;
+        const sway = (Math.random() - 0.5) * 70;
+        const color = heartColors[i % heartColors.length];
+
+        el.style.left = `${Math.max(2, Math.min(96, leftPct))}%`;
+        el.style.setProperty('--dur', `${dur.toFixed(2)}s`);
+        el.style.setProperty('--delay', `${delay.toFixed(2)}s`);
+        el.style.setProperty('--sway', `${sway.toFixed(0)}px`);
+        el.style.setProperty('--scale', (0.75 + Math.random() * 0.65).toFixed(2));
+        el.style.setProperty('--max-op', (0.65 + Math.random() * 0.35).toFixed(2));
+        el.style.setProperty('--rot-start', `${(-20 + Math.random() * 40).toFixed(0)}deg`);
+        el.style.setProperty('--rot-mid', `${(-25 + Math.random() * 50).toFixed(0)}deg`);
+        el.style.setProperty('--rot-end', `${(-20 + Math.random() * 40).toFixed(0)}deg`);
+
+        el.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+        risingHeartsLayer.appendChild(el);
+      }
+    }
+
+    function burstExtraHearts() {
+      const heartColors = ['#ff4d8d', '#ff70a6', '#ffd1e3', '#f7d996'];
+      for (let i = 0; i < 12; i++) {
+        const el = document.createElement('div');
+        el.className = 'rising-heart';
+        el.style.left = `${12 + Math.random() * 76}%`;
+        el.style.animationIterationCount = '1';
+        el.style.setProperty('--dur', `${(3.6 + Math.random() * 2.2).toFixed(2)}s`);
+        el.style.setProperty('--delay', `${(Math.random() * 0.45).toFixed(2)}s`);
+        el.style.setProperty('--sway', `${((Math.random() - 0.5) * 90).toFixed(0)}px`);
+        el.style.setProperty('--scale', (0.85 + Math.random() * 0.7).toFixed(2));
+        el.style.setProperty('--max-op', '0.95');
+        const size = 18 + Math.random() * 18;
+        const color = heartColors[i % heartColors.length];
+        el.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+        risingHeartsLayer.appendChild(el);
+        setTimeout(() => el.remove(), 6500);
+      }
+      playNote(783.99, 0.9, 0.045, 0);
+      playNote(1046.5, 1.1, 0.045, 0.08);
+    }
+
+    /* =========================================================================
+       8 ẢNH POLAROID BAY LÊN XUNG QUANH (TỔNG 9 ẢNH CÙNG ẢNH TRÊN THƯ)
+       ========================================================================= */
+    // Vị trí cân đối 4 ảnh bên trái + 4 ảnh bên phải để không che bức thư ở giữa
+    const desktopPhotoSlots = [
+      { left: '4%',  top: '12%', tilt: '-7deg',  bobDur: '4.4s', bobDelay: '0s' },
+      { left: '15%', top: '36%', tilt: '5deg',   bobDur: '5.1s', bobDelay: '0.4s' },
+      { left: '4%',  top: '60%', tilt: '-4deg',  bobDur: '4.8s', bobDelay: '0.8s' },
+      { left: '16%', top: '76%', tilt: '6deg',   bobDur: '5.3s', bobDelay: '0.2s' },
+      { right: '4%', top: '12%', tilt: '7deg',   bobDur: '4.6s', bobDelay: '0.3s' },
+      { right: '15%', top: '36%', tilt: '-6deg', bobDur: '5.0s', bobDelay: '0.7s' },
+      { right: '4%', top: '60%', tilt: '5deg',   bobDur: '4.5s', bobDelay: '0.1s' },
+      { right: '16%', top: '76%', tilt: '-5deg', bobDur: '5.2s', bobDelay: '0.5s' }
+    ];
+
+    function renderFloatingPhotos(revealNow = false) {
+      floatingPhotosLayer.innerHTML = '';
+      mobilePhotoGallery.innerHTML = '';
+
+      activeFloatingPhotos.forEach((photo, idx) => {
+        const slot = desktopPhotoSlots[idx];
+
+        // 1. Desktop floating polaroid
+        const card = document.createElement('div');
+        card.className = 'polaroid-float';
+        if (slot.left) card.style.left = slot.left;
+        if (slot.right) card.style.right = slot.right;
+        card.style.top = slot.top;
+        card.style.setProperty('--tilt', slot.tilt);
+        card.style.setProperty('--bob-dur', slot.bobDur);
+        card.style.setProperty('--bob-delay', slot.bobDelay);
+        card.style.setProperty('--m-dur', `${(10 + (idx % 4) * 1.8).toFixed(1)}s`);
+        card.style.setProperty('--m-delay', `${(idx * 1.15).toFixed(2)}s`);
+        card.style.setProperty('--sway', `${idx % 2 === 0 ? 18 : -18}px`);
+
+        card.innerHTML = `
+          <img src="${photo.src}" alt="${photo.caption}" />
+          <div class="polaroid-caption">${photo.caption}</div>
+        `;
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openLightbox(photo.src, photo.caption);
+        });
+        floatingPhotosLayer.appendChild(card);
+
+        // 2. Mobile/tablet compact polaroid inside letter showcase
+        const mCard = document.createElement('div');
+        mCard.className = 'mobile-polaroid';
+        mCard.innerHTML = `
+          <img src="${photo.src}" alt="${photo.caption}" />
+          <span>${photo.caption}</span>
+        `;
+        mCard.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openLightbox(photo.src, photo.caption);
+        });
+        mobilePhotoGallery.appendChild(mCard);
+
+        if (revealNow) {
+          setTimeout(() => {
+            card.classList.add('shown');
+            mCard.classList.add('shown');
+          }, 220 + idx * 140);
+        }
+      });
+    }
+
+    /* =========================================================================
+       CHUYỂN ĐỔI GIỮA CÁC BƯỚC TƯƠNG TÁC
+       ========================================================================= */
+    function updateStageDots() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`dot${i}`);
+        dot.classList.remove('active', 'done');
+        if (i === stage) dot.classList.add('active');
+        else if (i < stage) dot.classList.add('done');
+      }
+    }
+
+    function goToStage(nextStage) {
+      if (isTransitioning) return;
+      stage = nextStage;
+      updateStageDots();
+
+      if (stage === 0) {
+        stopRomanticMusicBox();
+        ambientAura.classList.remove('visible');
+        envelopeStage.classList.remove('visible', 'fade-out');
+        envelopeBox.classList.remove('opening');
+        letterStage.classList.remove('visible');
+        risingHeartsLayer.innerHTML = '';
+        floatingPhotosLayer.innerHTML = '';
+        mobilePhotoGallery.innerHTML = '';
+        hintBar.classList.remove('hidden');
+        hintText.textContent = 'Chạm vào màn hình để các hạt gộp lại thành trái tim';
+      } else if (stage === 1) {
+        stage1FormedTime = performance.now();
+        ambientAura.classList.add('visible');
+        playHeartChime();
+        hintBar.classList.remove('hidden');
+        hintText.textContent = 'Nhấp thêm lần nữa để nhận bức thư dành cho Thảo ♥';
+      } else if (stage === 2) {
+        playEnvelopeChime();
+        envelopeBox.classList.remove('opening');
+        envelopeStage.classList.remove('fade-out');
+        envelopeStage.classList.add('visible');
+        hintBar.classList.remove('hidden');
+        hintText.textContent = 'Nhấn vào phong thư để mở nhé Thảo ♥';
+      } else if (stage === 3) {
+        isTransitioning = true;
+        envelopeBox.classList.add('opening');
+        playHeartChime();
+        hintBar.classList.add('hidden');
+
+        // Hiệu ứng mở phong thư -> hiện thư, chữ I LOVE YOU / ANH YÊU EM, 26 trái tim bay & 8 ảnh bay lên
+        setTimeout(() => {
+          envelopeStage.classList.add('fade-out');
+          letterTopPhoto.src = activeTopPhoto.src;
+          letterStage.classList.add('visible');
+          spawnRisingHearts(DEFAULT_CONFIG.risingHeartCount);
+          renderFloatingPhotos(true);
+          startRomanticMusicBox();
+          isTransitioning = false;
+        }, 780);
+      }
+    }
+
+    // Chạm/nhấp bất kỳ chỗ nào trên màn hình ở Bước 0 -> Bước 1, Bước 1 -> Bước 2
+    let lastAdvanceAt = 0;
+    function handleScreenAdvance(e) {
+      if (e.target && e.target.closest && (e.target.closest('.top-controls') || e.target.closest('.modal-backdrop'))) {
+        return;
+      }
+      const now = Date.now();
+      if (now - lastAdvanceAt < 280) return;
+      if (stage === 0) {
+        lastAdvanceAt = now;
+        goToStage(1);
+      } else if (stage === 1) {
+        lastAdvanceAt = now;
+        goToStage(2);
+      }
+    }
+    canvas.addEventListener('click', handleScreenAdvance);
+    canvas.addEventListener('touchend', (e) => {
+      if (stage === 0 || stage === 1) {
+        e.preventDefault();
+        handleScreenAdvance(e);
+      }
+    }, { passive: false });
+
+    // Nhấn vào phong thư ở Bước 2 -> Mở thư (Bước 3)
+    envelopeBox.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (stage === 2 && !isTransitioning) {
+        goToStage(3);
+      }
+    });
+    envelopeBox.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && stage === 2 && !isTransitioning) {
+        e.preventDefault();
+        goToStage(3);
+      }
+    });
+
+    // Nút thả thêm tim trong bức thư
+    document.getElementById('moreHeartsBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      burstExtraHearts();
+    });
+
+    // Nút xem lại từ đầu
+    document.getElementById('replayBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      isTransitioning = false;
+      initParticles();
+      goToStage(0);
+    });
+
+    /* =========================================================================
+       LIGHTBOX XEM ẢNH LỚN
+       ========================================================================= */
+    const lightboxModal = document.getElementById('lightboxModal');
+    const lightboxImg = document.getElementById('lightboxImg');
+    const lightboxCaption = document.getElementById('lightboxCaption');
+
+    function openLightbox(src, caption) {
+      lightboxImg.src = src;
+      lightboxCaption.textContent = caption || '';
+      lightboxModal.classList.add('open');
+    }
+
+    function closeLightbox() {
+      lightboxModal.classList.remove('open');
+    }
+
+    letterTopPhotoWrap.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openLightbox(activeTopPhoto.src, activeTopPhoto.caption);
+    });
+    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    lightboxModal.addEventListener('click', (e) => {
+      if (e.target === lightboxModal) closeLightbox();
+    });
+
+    /* =========================================================================
+       TÙY CHỈNH 9 ẢNH TRỰC TIẾP TRONG TRÌNH DUYỆT
+       ========================================================================= */
+    const customizerModal = document.getElementById('customizerModal');
+    const photoSlotsGrid = document.getElementById('photoSlotsGrid');
+
+    function renderCustomizerSlots() {
+      photoSlotsGrid.innerHTML = '';
+
+      // Ô #1: Ảnh trên bức thư (Ảnh thứ 9)
+      const topSlot = createUploadSlot('Ảnh trên thư (#9)', activeTopPhoto.src, (dataUrl) => {
+        activeTopPhoto.src = dataUrl;
+        letterTopPhoto.src = dataUrl;
+        renderCustomizerSlots();
+      });
+      photoSlotsGrid.appendChild(topSlot);
+
+      // 8 ô tiếp theo: 8 ảnh bay lên
+      activeFloatingPhotos.forEach((photo, idx) => {
+        const slot = createUploadSlot(`Ảnh bay #${idx + 1}`, photo.src, (dataUrl) => {
+          activeFloatingPhotos[idx].src = dataUrl;
+          if (stage === 3) {
+            renderFloatingPhotos(true);
+          }
+          renderCustomizerSlots();
+        });
+        photoSlotsGrid.appendChild(slot);
+      });
+    }
+
+    function createUploadSlot(labelText, imgSrc, onLoaded) {
+      const label = document.createElement('label');
+      label.className = 'slot-card';
+      label.innerHTML = `
+        <img src="${imgSrc}" alt="${labelText}" />
+        <span>${labelText}</span>
+        <input type="file" accept="image/*" />
+      `;
+      const input = label.querySelector('input');
+      input.addEventListener('change', (ev) => {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            onLoaded(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      return label;
+    }
+
+    document.getElementById('customizePhotosBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      renderCustomizerSlots();
+      customizerModal.classList.add('open');
+    });
+
+    function closeCustomizer() {
+      customizerModal.classList.remove('open');
+    }
+    document.getElementById('customizerClose').addEventListener('click', closeCustomizer);
+    document.getElementById('donePhotosBtn').addEventListener('click', closeCustomizer);
+    customizerModal.addEventListener('click', (e) => {
+      if (e.target === customizerModal) closeCustomizer();
+    });
+
+    document.getElementById('resetPhotosBtn').addEventListener('click', () => {
+      activeTopPhoto = { ...DEFAULT_CONFIG.topLetterPhoto };
+      activeFloatingPhotos = DEFAULT_CONFIG.floatingPhotos.map(p => ({ ...p }));
+      letterTopPhoto.src = activeTopPhoto.src;
+      if (stage === 3) renderFloatingPhotos(true);
+      renderCustomizerSlots();
+    });
+
+    /* =========================================================================
+       KHỞI ĐỘNG NGAY LẬP TỨC (không chờ window.load để tránh màn hình trống trên điện thoại)
+       ========================================================================= */
+    function handleViewportChange() {
+      resizeCanvas();
+      initStars();
+    }
+
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(handleViewportChange, 150);
+    });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+    }
+
+    function startApp() {
+      initParticles();
+      resizeCanvas();
+      initStars();
+      updateStageDots();
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      animFrameId = requestAnimationFrame(animateCanvas);
+    }
+
+    startApp();
+    window.addEventListener('load', handleViewportChange);
+  </script>
+</body>
+</html>
